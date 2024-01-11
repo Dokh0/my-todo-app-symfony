@@ -7,8 +7,6 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Task>
- *
  * @method Task|null find($id, $lockMode = null, $lockVersion = null)
  * @method Task|null findOneBy(array $criteria, array $orderBy = null)
  * @method Task[]    findAll()
@@ -20,6 +18,10 @@ class TaskRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Task::class);
     }
+
+    // Add your TaskRepository methods here
+
+
 
 //    /**
 //     * @return Task[] Returns an array of Task objects

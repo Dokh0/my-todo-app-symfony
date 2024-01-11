@@ -1,81 +1,71 @@
 <?php
 
+// src/Controller/TaskController.php
+
 namespace App\Controller;
 
 use App\Entity\Task;
-use App\Form\TaskType;
 use App\Repository\TaskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/task')]
+#[Route('/api/task')]
 class TaskController extends AbstractController
 {
     #[Route('/', name: 'app_task_index', methods: ['GET'])]
-    public function index(TaskRepository $taskRepository): Response
+    public function index(TaskRepository $taskRepository): JsonResponse
     {
-        return $this->render('task/index.html.twig', [
-            'tasks' => $taskRepository->findAll(),
-        ]);
+        $tasks = $taskRepository->findAll();
+        $tasksArray = array_map(function (Task $task) {
+            return $task->toArray();
+        }, $tasks);
+
+        return new JsonResponse($tasksArray);
     }
 
-    #[Route('/new', name: 'app_task_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    #[Route('/new', name: 'app_task_new', methods: ['POST'])]
+    public function new(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
+        $data = json_decode($request->getContent(), true);
         $task = new Task();
-        $form = $this->createForm(TaskType::class, $task);
-        $form->handleRequest($request);
+        // Set the task properties using $data here
+        // $task->setTitle($data['title']);
+        // $task->setDescription($data['description']);
+        // ... other setters as needed
+        $entityManager->persist($task);
+        $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($task);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('task/new.html.twig', [
-            'task' => $task,
-            'form' => $form,
-        ]);
+        return new JsonResponse($task->toArray(), JsonResponse::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'app_task_show', methods: ['GET'])]
-    public function show(Task $task): Response
+    public function show(Task $task): JsonResponse
     {
-        return $this->render('task/show.html.twig', [
-            'task' => $task,
-        ]);
+        return new JsonResponse($task->toArray());
     }
 
-    #[Route('/{id}/edit', name: 'app_task_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Task $task, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}/edit', name: 'app_task_edit', methods: ['POST'])]
+    public function edit(Request $request, Task $task, EntityManagerInterface $entityManager): JsonResponse
     {
-        $form = $this->createForm(TaskType::class, $task);
-        $form->handleRequest($request);
+        $data = json_decode($request->getContent(), true);
+        // Set the task properties using $data here
+        // $task->setTitle($data['title']);
+        // $task->setDescription($data['description']);
+        // ... other setters as needed
+        $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('task/edit.html.twig', [
-            'task' => $task,
-            'form' => $form,
-        ]);
+        return new JsonResponse($task->toArray());
     }
 
-    #[Route('/{id}', name: 'app_task_delete', methods: ['POST'])]
-    public function delete(Request $request, Task $task, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}', name: 'app_task_delete', methods: ['DELETE'])]
+    public function delete(Task $task, EntityManagerInterface $entityManager): JsonResponse
     {
-        if ($this->isCsrfTokenValid('delete'.$task->getId(), $request->request->get('_token'))) {
-            $entityManager->remove($task);
-            $entityManager->flush();
-        }
+        $entityManager->remove($task);
+        $entityManager->flush();
 
-        return $this->redirectToRoute('app_task_index', [], Response::HTTP_SEE_OTHER);
+        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
 }
